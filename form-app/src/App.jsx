@@ -1,10 +1,59 @@
 import './App.css'
 import FormInput from './components/FormInput'
-import { useRef, useState } from 'react';
+import { useRef, useState, useEffect, useMemo} from 'react';
+import Select from "react-select";
 
 
 const App =() => {
   const usernameRef = useRef();
+  const [showForm, setShowForm] = useState(true);
+
+  // 1. Hold raw customer data
+  const [customers, setCustomers] = useState([])
+
+  // 2. Track the current input in the Select’s text field
+  const [inputValue, setInputValue] = useState('')
+
+  // 3. Fetch all customers once on mount
+  useEffect(() => {
+    fetch(
+      'https://686547495b5d8d0339808f5d.mockapi.io/spitogatos/api/customer-email-lookup'
+    )
+      .then((res) => res.json())
+      .then((data) => setCustomers(data))
+      .catch((err) => console.error('Failed to load customers', err))
+  }, [])
+
+    // 4. Map your API data into { value, label } form
+  const options = useMemo(
+    () =>
+      customers.map(({ name, email, id }) => ({
+        value: email,
+        label: email, 
+        searchableLabel: name,email,
+        name,
+        id,
+      })),
+    [customers]
+  )
+
+    // 5. Filter locally by the user’s input
+  const filteredOptions = useMemo(() => {
+    if (!inputValue) return options
+    return options.filter((opt) =>
+      opt.searchableLabel.toLowerCase().includes(inputValue.toLowerCase())
+    )
+  }, [options, inputValue])
+
+  // 6. Handlers for react-select
+  const [selectedOptions, setSelectedOptions] = useState([])
+  const handleChange = (opts) => setSelectedOptions(opts || [])
+  const handleInputChange = (val) => setInputValue(val)
+ const selectEmails = (options) => {
+  setSelectedOptions(options)
+}
+
+
   const [values, setValues] = useState({
     username:"",
     email:"",
@@ -13,6 +62,16 @@ const App =() => {
     confirmPassword:""
 
   });
+  const handleCancel = () => {
+  setValues({
+    username: "",
+    email: "",
+    bithday: "",
+    password: "",
+    confirmPassword: ""
+  });
+};
+
 
   const inputs=[
     {  
@@ -73,17 +132,56 @@ const App =() => {
     console.log(Object.fromEntries(data.entries()))
   }  
 
+
   //kanei update amesos
   const onChange= (e)=> {
     setValues({...values, [e.target.name]: e.target.value})
   }
 
+
   console.log(values)
   return (
   <div className='app'>
-
+    {showForm ? (
     <form onSubmit={handleSubmit}>
-      <h1>Register</h1>
+      <div className="form-header">   
+          <h1>Email sent form</h1>                
+          <button
+            type="button"
+            onClick={() => setShowForm(false)}
+            className='closeButton'
+          >
+            ×
+          </button> 
+      </div>
+          <Select
+            isMulti
+            options={filteredOptions}
+            value={selectedOptions}
+            onChange={handleChange}
+            onInputChange={handleInputChange}
+            placeholder="Type to search customers…"
+            noOptionsMessage={() =>
+              inputValue ? 'No matches found' : 'Type to search'
+            }
+          />
+          <footer className="form-footer">
+            <button
+            onClick={() => {
+              setSelectedOptions(options)
+              setValues(v => ({
+                ...v,
+                recipients: options.map(o => o.value)
+              }))
+            }}
+            className='cancel-button'
+          >
+            Enter all customers
+          </button>
+            <button type="button" onClick={() => setSelectedOptions([])}>
+              Remove all clients
+            </button>
+          </footer>
       {inputs.map((input) =>
       (
         <FormInput 
@@ -95,8 +193,14 @@ const App =() => {
       ))
       }
       <button>Submit</button>
-    </form>
-  </div>)
-}
+      <button type="button" onClick={handleCancel} className="cancel-button">
+        Cancel
+      </button>
+    </form> 
+          ) : (
+        <button onClick={() => setShowForm(true)}>Open Form</button>
+      )}
+  </div>
+  )}
 
 export default App
