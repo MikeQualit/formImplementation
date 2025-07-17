@@ -2,10 +2,8 @@
   display: flex;
   align-items: center;
   justify-content: center;
-
   background-color: plum;
   background-size: cover;
-  background-position: center;
 }
 
 html, body {
@@ -21,12 +19,14 @@ form {
   border-radius: 10px;
   margin-top: 15px;
   margin-bottom: 15px;
+  width: 450px; /* or any fixed width you want */
+  padding: 20px;
 }
 
 button{
     width: 100%;
     height: 50px;
-    padding: 10px;
+    padding: 5px;
     border: none;
     background-color: rebeccapurple;
     color: white;
@@ -34,8 +34,8 @@ button{
     font-weight: bold;
     font-size: 18px;
     cursor: pointer;
-    margin-top: 15px;
-    margin-bottom: 30px;
+    margin-top: 5px;
+    margin-bottom: 5px;
 }
 
 
@@ -47,6 +47,7 @@ button{
   color: #ec0606;
   padding: 0;
   margin: 0;
+  padding: 5px;
 }
 
 .form-header {
@@ -54,8 +55,7 @@ button{
   justify-content: space-between;
   align-items: flex-start; /* aligns items to the top */
   white-space: nowrap;
-  margin-top: 20px;
-  padding: 10px 0;
+
 }
 
 .form-header h1 {
@@ -74,4 +74,48 @@ button{
   padding: 10px;
   cursor: pointer;
   width: 100%;
+}
+
+.textareaWrapper {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+}
+
+.textareaField {
+  min-width: 300px;
+  min-height: 180px;
+  resize: vertical;
+}
+
+.charCounter {
+  align-self: flex-end;
+  font-size: 0.8rem;
+  color: #888;
+  margin-top: 4px;
+}
+
+.counter {
+  font-size: 0.875rem;
+  color: #555;
+}
+
+.fixed-select {
+  width: 100%;
+  max-width: 600px;
+}
+
+.fixed-select .react-select__value-container {
+  max-height: 120px;
+  overflow-y: auto;
+  flex-wrap: nowrap;
+}
+
+.fixed-select .react-select__multi-value {
+  white-space: nowrap;
+}
+
+.app.closed {
+  background-color: plum;
+  min-height: 100vh;
 }

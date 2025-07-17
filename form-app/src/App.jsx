@@ -1,20 +1,22 @@
 import './App.css'
 import FormInput from './components/FormInput'
-import { useRef, useState, useEffect, useMemo} from 'react';
+import { useState, useEffect, useMemo} from 'react';
 import Select from "react-select";
 
 
 const App =() => {
-  const usernameRef = useRef();
   const [showForm, setShowForm] = useState(true);
 
-  // 1. Hold raw customer data
+  // Get today's date
+  const today = new Date().toISOString().split("T")[0];
+
+  // Hold data
   const [customers, setCustomers] = useState([])
 
-  // 2. Track the current input in the Select’s text field
+  // Track the current input
   const [inputValue, setInputValue] = useState('')
 
-  // 3. Fetch all customers once on mount
+  
   useEffect(() => {
     fetch(
       'https://686547495b5d8d0339808f5d.mockapi.io/spitogatos/api/customer-email-lookup'
@@ -24,116 +26,125 @@ const App =() => {
       .catch((err) => console.error('Failed to load customers', err))
   }, [])
 
-    // 4. Map your API data into { value, label } form
+  // Map API data
   const options = useMemo(
     () =>
       customers.map(({ name, email, id }) => ({
         value: email,
-        label: email, 
-        searchableLabel: name,email,
+        label: `${name} <${email}>`,
         name,
+        email,
         id,
       })),
     [customers]
   )
 
-    // 5. Filter locally by the user’s input
-  const filteredOptions = useMemo(() => {
-    if (!inputValue) return options
-    return options.filter((opt) =>
-      opt.searchableLabel.toLowerCase().includes(inputValue.toLowerCase())
-    )
-  }, [options, inputValue])
 
-  // 6. Handlers for react-select
-  const [selectedOptions, setSelectedOptions] = useState([])
-  const handleChange = (opts) => setSelectedOptions(opts || [])
+  const filteredOptions = useMemo(() => {
+    const q = inputValue.trim().toLowerCase();
+    return q
+      ? options.filter(
+          ({ name, email }) =>
+            name.toLowerCase().includes(q) || email.toLowerCase().includes(q)
+        )
+      : options;
+  }, [options, inputValue]);
+
+  const [selectedOptions, setSelectedOptions] = useState([]);
+  const handleChange = (selected) => {
+  setSelectedOptions(selected || []);
+  setInputValue(''); 
+};
+
   const handleInputChange = (val) => setInputValue(val)
- const selectEmails = (options) => {
-  setSelectedOptions(options)
-}
 
 
   const [values, setValues] = useState({
-    username:"",
-    email:"",
-    bithday:"",
-    password:"",
-    confirmPassword:""
+    subject:"",
+    textemail:"",
+    sentdate:""
 
   });
   const handleCancel = () => {
   setValues({
-    username: "",
-    email: "",
-    bithday: "",
-    password: "",
-    confirmPassword: ""
+    subject: "",
+    textemail: "",
+    sentdate: ""
   });
+
+  
 };
 
 
   const inputs=[
     {  
       id: 1,
-      name: "username",
+      name: "subject",
       type: "text",
-      placeholder: "Username",
-      label: "Username",
-      errorMessage:"username 1 to 20 char",
-      pattern: "^[A-Za-z0-9]{3,16}$",
+      placeholder: "Subject",
+      label: "Subject",
+      errorMessage:"at least 10 characters",
+      minLength: 10,
       required: true,
       
     },
     {
       id: 2,
-      name: "email",
-      type: "email",
-      placeholder: "Email",
-      label: "Email",
-      errorMessage:"it should be valid email",
-      required: true,
-    },
-    {
-      id: 3,
-      name: "birthday",
-      type: "date",
-      placeholder: "Birthday",
-      label: "Birthday",
+      name: "textemail",
+      type: "textarea",  
+      placeholder: "text for email",
+      label: "Text (optional)",
+      errorMessage:"Add a text",
+      maxLength: 3000, 
       required: false,
     },
     {
-      id: 4,
-      name: "password",
-      type: "password",
-      placeholder: "Password",
-      label: "Password",
-      errorMessage:"Password should be chars and other staff",
-      pattern: `^(?=.*[0-9])(?=.*[a-zA-Z])(?=.*[!@#$%^&*])[a-zA-Z0-9!@#$%^&*]{8,20}$`,
-      required: true,
-
-    },
-    {
-      id: 5,
-      name: "confirmPassword",
-      type: "password",
-      placeholder: "Confirm Password",
-      label: "Confirm Password",
-      errorMessage:"Not match",
-      pattern: values.password,
-      required: true,
+      id: 3,
+      name: "sentdate",
+      type: "date",
+      placeholder: "Date",
+      label: "Schedule email sending (optional)",
+      required: false,
+      min: today,
     },
   ];
 
   const handleSubmit = (e) =>{
     e.preventDefault();
+    // Check if any recipients are selected
+  if (selectedOptions.length === 0) {
+    alert("Please select at least one email.");
+    return;
+  }
+  // Check empty text
+if (values.textemail.trim() === '') {
+    const userChoice = window.confirm(
+      "The email text is empty. Auto-complete with default text or Cancel to proceed without text."
+    );
+    
+    if (userChoice) {
+      // Auto-complete with default text
+      setValues({
+        ...values,
+        textemail: "Dear customer,\n\nThank you for your interest."
+      });
+      return; 
+    }
+
+  }
+
+  setShowForm(false);
     const data = new FormData(e.target)
-    console.log(usernameRef)
     console.log(Object.fromEntries(data.entries()))
+    const selectedEmails = selectedOptions.map(opt => opt.value);
+
+    console.log({
+      selectedEmails
+    });
+    alert("Email submited");
   }  
 
-
-  //kanei update amesos
+  // auto update
   const onChange= (e)=> {
     setValues({...values, [e.target.name]: e.target.value})
   }
@@ -161,23 +172,25 @@ const App =() => {
             onChange={handleChange}
             onInputChange={handleInputChange}
             placeholder="Type to search customers…"
+            className="fixed-select"
             noOptionsMessage={() =>
               inputValue ? 'No matches found' : 'Type to search'
             }
           />
           <footer className="form-footer">
             <button
-            onClick={() => {
-              setSelectedOptions(options)
-              setValues(v => ({
-                ...v,
-                recipients: options.map(o => o.value)
-              }))
-            }}
-            className='cancel-button'
-          >
-            Enter all customers
-          </button>
+              onClick={() => {
+                setSelectedOptions(options)
+                setValues(v => ({
+                  ...v,
+                  recipients: options.map(o => o.value)
+                }))
+              }}
+              className='cancel-button'
+              type="button"
+            >
+              Enter all customers
+            </button>
             <button type="button" onClick={() => setSelectedOptions([])}>
               Remove all clients
             </button>
@@ -198,7 +211,8 @@ const App =() => {
       </button>
     </form> 
           ) : (
-        <button onClick={() => setShowForm(true)}>Open Form</button>
+        <div className='app close'><button onClick={() => setShowForm(true)}>Open Form</button></div>      
+        
       )}
   </div>
   )}
